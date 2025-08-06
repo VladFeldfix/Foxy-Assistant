@@ -49,22 +49,52 @@ class FoxyAssistant:
         self.main_menu()
     
     def main_menu(self):
-        text = "שלום! אני שועלי, העוזר הוירטואלי\n בחר את האופציה הרצויה על ידי שליחת המספר הרלוונטי"+"\n"
+        text = "שלום! אני שועלי, העוזר הוירטואלי"+"\n"
+        text += "?"
+        text += "מה תרצו לעשות היום"
         options = []
         for plugin in pluginsList.Apps:
             options.append(plugin[0])
         choice = self.choose(text, options)
+        try:
+            pluginsList.Apps[int(choice)-1][1](self)
+        except:
+            self.print("בחירה לא תקינה, נסו שוב")
+
 
     def choose(self, text, options):
         i = 0
+        text += "\n"
+        text += "בחרו את האופציה הרצויה על ידי שליחת המספר הרלוונטי"
+        text += "\n"
+        available_options = []
         for option in options:
             i += 1
             text += option+" "
             text += "("+str(i)+")"
             text += "\n"
+            available_options.append(str(i))
         text = text[:-1]
         choice = self.input(text)
+        while not choice in available_options:
+            choice = self.input("בחירה לא תקינה, נסו שוב")
+        return choice
+    
+    def print(self, text):
+        self.display_message(text, sender='foxy')  # tell it this is Foxy
 
+    def input(self, text):
+        delay_done = tk.BooleanVar()
+        root.after(500, lambda: delay_done.set(True))  # 500 ms delay
+        root.wait_variable(delay_done)
+        self.display_message(text, sender='foxy')  # tell it this is Foxy
+        self.entry.config(state='normal')
+        self.send_button.config(state='normal')
+        self.entry.focus()
+        self.user_responce = tk.StringVar()
+        root.wait_variable(self.user_responce)
+        return self.user_responce.get()
+    
     def send_message(self, event=None):
         message = self.entry.get()
         if message.strip():
@@ -72,7 +102,7 @@ class FoxyAssistant:
             self.entry.delete(0, tk.END)
             self.entry.config(state='disabled')
             self.send_button.config(state='disabled')
-
+            self.user_responce.set(message)
             #self.root.after(800, self.respond)  # Simulate delay before bot responds
 
     def respond(self, response_text):
@@ -83,7 +113,6 @@ class FoxyAssistant:
 
     def display_message(self, message_text, sender='user'):
         msg_row = tk.Frame(self.messages_frame, bg="#add8e6")
-
         if sender == 'user':
             msg_row.pack(fill='x', padx=10, pady=5, anchor='w')
             avatar_img = self.avatar_user
@@ -134,7 +163,9 @@ class FoxyAssistant:
                 wraplength=self.canvas.winfo_width() - 100
             )
             msg_label.pack(fill='x', expand=True)
-
+        
+        self.canvas.yview_moveto(1.0)
+        
     def on_canvas_configure(self, event):
         self.canvas.itemconfig(self.canvas_window, width=event.width)
         wrap_width = event.width - 40
